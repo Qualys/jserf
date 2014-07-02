@@ -8,6 +8,42 @@
     <artifactId>jserf</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
+    <developers>
+        <developer>
+            <name>Tristan Burch</name>
+            <email>me@tristanburch.com</email>
+            <timezone>America/Denver</timezone>
+            <roles>
+                <role>committer</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/qualys/jserf.git</connection>
+        <developerConnection>scm:git:git@github.com:qualys/jserf.git</developerConnection>
+        <url>https://github.com/qualys/jserf</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/qualys/jserf/issues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>Travis CI</system>
+        <url>https://travis-ci.org/qualys/jserf</url>
+    </ciManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
