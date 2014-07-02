@@ -26,6 +26,7 @@ import com.qualys.jserf.model.response.ResponseHeader;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.msgpack.MessagePack;
@@ -45,6 +46,7 @@ import static org.msgpack.template.Templates.*;
  * @author Tristan Burch
  */
 @Slf4j
+@AllArgsConstructor
 public class SerfClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private final Set<Command> multipleResponseCommands = ImmutableSet.of(Command.STREAM, Command.MONITOR, Command.QUERY);
     private final Template<Map<String, Value>> templateMap = tMap(TString, TValue);
@@ -52,12 +54,6 @@ public class SerfClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private final ExtractorManager extractorManager;
     private final MessagePack messagePack;
     private final ConcurrentMap<Integer, SerfRequest> requestsBySequence;
-
-    public SerfClientHandler(ExtractorManager extractorManager, MessagePack messagePack, ConcurrentMap<Integer, SerfRequest> requestsBySequence) {
-        this.extractorManager = extractorManager;
-        this.messagePack = messagePack;
-        this.requestsBySequence = requestsBySequence;
-    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf) throws Exception {

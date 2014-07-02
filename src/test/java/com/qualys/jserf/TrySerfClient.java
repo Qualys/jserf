@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.*;
@@ -39,7 +40,7 @@ public class TrySerfClient {
 
     @Before
     public void initSerfClient() throws InterruptedException {
-        SerfClient client = new SerfClient("localhost", 7373);
+        SerfClient client = new NettySerfClient("localhost", 7373);
         this.client = client;
     }
 
@@ -73,8 +74,6 @@ public class TrySerfClient {
 
     @Test(timeout = 10000)
     public void testStats() throws Exception {
-        testHandShake();
-
         final boolean[] callbackInvoked = {false};
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -111,8 +110,6 @@ public class TrySerfClient {
 
     @Test(timeout = 10000)
     public void testMembers() throws Exception {
-        testHandShake();
-
         final boolean[] callbackInvoked = {false};
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -143,5 +140,24 @@ public class TrySerfClient {
         latch.await();
 
         assertTrue(callbackInvoked[0]);
+    }
+
+    @Test(timeout = 60000)
+    public void testReconnect() throws InterruptedException {
+        final boolean[] success = {false};
+        while (!success[0]) {
+            SerfRequest request = SerfRequests.stats(new SerfResponseCallBack<StatsResponseBody>() {
+                @Override
+                public void call(SerfResponse response) {
+                    success[0] = true;
+                }
+            });
+            try {
+                client.makeRpc(request);
+            } catch (IOException e) {
+                //this is expected if not connected to serf
+            }
+            Thread.sleep(500);
+        }
     }
 }

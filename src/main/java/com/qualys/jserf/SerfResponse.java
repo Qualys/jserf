@@ -23,7 +23,7 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- @author Tristan Burch
+ * @author Tristan Burch
  */
 @Data
 @AllArgsConstructor
