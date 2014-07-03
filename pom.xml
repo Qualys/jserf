@@ -29,6 +29,7 @@
             <name>Tristan Burch</name>
             <email>me@tristanburch.com</email>
             <timezone>America/Denver</timezone>
+            <url>https://github.com/tburch</url>
             <roles>
                 <role>committer</role>
             </roles>
