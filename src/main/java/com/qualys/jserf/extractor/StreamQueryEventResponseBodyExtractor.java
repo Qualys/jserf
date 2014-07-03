@@ -31,7 +31,7 @@ import java.util.Map;
  */
 @Slf4j
 public class StreamQueryEventResponseBodyExtractor implements ResponseBodyExtractor<StreamResponseBody> {
-    private static final String HANDLES_EVENT_NAME = "user";
+    private static final String HANDLES_EVENT_NAME = "query";
 
     @Override
     public StreamResponseBody extractBody(Map<String, Value> bodyValues, ExtractorManager extractorManager) throws Exception {

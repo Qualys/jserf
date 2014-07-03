@@ -17,7 +17,9 @@
 package com.qualys.jserf;
 
 import com.google.common.base.Supplier;
+import com.google.common.cache.Cache;
 import com.qualys.jserf.extractor.ExtractorManager;
+import com.qualys.jserf.model.request.Command;
 import com.qualys.jserf.model.response.EmptyResponseBody;
 import com.twitter.common.quantity.Amount;
 import com.twitter.common.quantity.Time;
@@ -30,12 +32,12 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.msgpack.MessagePack;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -47,7 +49,7 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
     private final int serfPort;
     private final ExtractorManager extractorManager;
     private final MessagePack messagePack;
-    private final ConcurrentMap<Integer, SerfRequest> requestsBySequence;
+    private final Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequence;
     private final EventLoopGroup eventLoopGroup;
     private final Bootstrap bootstrap;
     private final BackoffStrategy backoffStrategy;
@@ -57,17 +59,17 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
 
     private volatile Channel currentChannel;
 
-    public ChannelManger(String host, int port, long minReconnectRetrySeconds, long maxReconnectRetrySeconds, ExtractorManager extractorManager, MessagePack messagePack, ConcurrentMap<Integer, SerfRequest> requestsBySequence) {
+    public ChannelManger(String host, int port, long minReconnectRetrySeconds, long maxReconnectRetrySeconds, ExtractorManager extractorManager, MessagePack messagePack, Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequence) {
         this.serfHost = host;
         this.serfPort = port;
         this.extractorManager = extractorManager;
         this.messagePack = messagePack;
-        this.requestsBySequence = requestsBySequence;
+        this.callBacksBySequence = callBacksBySequence;
 
         this.eventLoopGroup = new NioEventLoopGroup();
         this.bootstrap = new Bootstrap().group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
-                .handler(new SerfClientInitializer(messagePack, requestsBySequence, extractorManager, this));
+                .handler(new SerfClientInitializer(messagePack, callBacksBySequence, extractorManager, this));
         this.backoffStrategy = new TruncatedBinaryBackoff(Amount.of(minReconnectRetrySeconds, Time.SECONDS), Amount.of(maxReconnectRetrySeconds, Time.SECONDS), true);
 
         try {
@@ -96,11 +98,17 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
                     }
                 }
             });
-            requestsBySequence.put(handshake.getHeader().seq, handshake);
-            log.debug("Sending handshake to {}:{} with sequence={}", serfHost, serfPort, handshake.getHeader().seq);
-            channel.write(messagePack.write(handshake.getHeader()));
-            channel.writeAndFlush(messagePack.write(handshake.getBody()));
-            log.debug("Sent handshake to {}:{} with sequence={}", serfHost, serfPort, handshake.getHeader().seq);
+            callBacksBySequence.put(handshake.getHeader().seq, Pair.of(handshake.getHeader().toCommand(), handshake.getCallBack()));
+            try {
+                log.debug("Sending handshake to {}:{} with sequence={}", serfHost, serfPort, handshake.getHeader().seq);
+                channel.write(messagePack.write(handshake.getHeader()));
+                channel.writeAndFlush(messagePack.write(handshake.getBody()));
+                log.debug("Sent handshake to {}:{} with sequence={}", serfHost, serfPort, handshake.getHeader().seq);
+            } catch (IOException e) {
+                log.warn("Caught IOException while trying to write request. Removing handshake callback", e);
+                callBacksBySequence.invalidate(handshake.getHeader().seq);
+                throw e;
+            }
         } catch (IOException e) {
             log.warn("Caught IOException while trying to connect to {}:{}", serfHost, serfPort);
             throw e;

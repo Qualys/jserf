@@ -34,4 +34,12 @@ public class RequestHeader {
         this.seq = seq;
         this.command = command.getCommandName();
     }
+
+    public Command toCommand() {
+        try {
+            return Command.valueOf(command.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return null;
+        }
+    }
 }

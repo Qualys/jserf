@@ -29,19 +29,17 @@ import java.util.Set;
 public class ExtractorManager {
 
     private final Set<ResponseBodyExtractor<? extends ResponseBody>> extractors = ImmutableSet.of(
-            new KeyResponseBodyExtractor(),
+            new EmptyResponseBodyExtractor(),
             new JoinResponseBodyExtractor(),
+            new KeyResponseBodyExtractor(),
             new ListKeysResponseBodyExtractor(),
-            new MembersResponseBodyExtractor(),
             new MembersResponseBodyExtractor(),
             new MonitorResponseBodyExtractor(),
             new QueryResponseBodyExtractor(),
-            new KeyResponseBodyExtractor(),
             new StatsResponseBodyExtractor(),
-            new StreamResponseBodyExtractor(),
-            new KeyResponseBodyExtractor(),
-            new EmptyResponseBodyExtractor(),
-            new StreamUserEventResponseBodyExtractor()
+            new StreamUserEventResponseBodyExtractor(),
+            new StreamQueryEventResponseBodyExtractor(),
+            new StreamResponseBodyExtractor()
     );
 
     public Optional<ResponseBodyExtractor> getExtractor(Command command) {

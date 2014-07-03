@@ -16,7 +16,9 @@
 
 package com.qualys.jserf;
 
+import com.google.common.cache.Cache;
 import com.qualys.jserf.extractor.ExtractorManager;
+import com.qualys.jserf.model.request.Command;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -24,9 +26,8 @@ import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.msgpack.MessagePack;
-
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author Tristan Burch
@@ -35,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 @AllArgsConstructor
 public class SerfClientInitializer extends ChannelInitializer<SocketChannel> {
     private final MessagePack messagePack;
-    private final ConcurrentMap<Integer, SerfRequest> requestsBySequence;
+    private final Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequence;
     private final ExtractorManager extractorManager;
     private final ChannelManger channelManger;
 
@@ -53,6 +54,6 @@ public class SerfClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("bytesEncoder", new ByteArrayEncoder());
 
         log.debug("Adding SerfClientHandler");
-        pipeline.addLast("handler", new SerfClientHandler(extractorManager, messagePack, requestsBySequence));
+        pipeline.addLast("handler", new SerfClientHandler(extractorManager, messagePack, callBacksBySequence));
     }
 }
