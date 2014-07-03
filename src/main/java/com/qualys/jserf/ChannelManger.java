@@ -48,8 +48,9 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
     private final ExtractorManager extractorManager;
     private final MessagePack messagePack;
     private final ConcurrentMap<Integer, SerfRequest> requestsBySequence;
-    private final BackoffStrategy backoffStrategy;
     private final EventLoopGroup eventLoopGroup;
+    private final Bootstrap bootstrap;
+    private final BackoffStrategy backoffStrategy;
 
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean connecting = new AtomicBoolean(false);
@@ -64,6 +65,9 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
         this.requestsBySequence = requestsBySequence;
 
         this.eventLoopGroup = new NioEventLoopGroup();
+        this.bootstrap = new Bootstrap().group(eventLoopGroup)
+                .channel(NioSocketChannel.class)
+                .handler(new SerfClientInitializer(messagePack, requestsBySequence, extractorManager, this));
         this.backoffStrategy = new TruncatedBinaryBackoff(Amount.of(minReconnectRetrySeconds, Time.SECONDS), Amount.of(maxReconnectRetrySeconds, Time.SECONDS), true);
 
         try {
@@ -71,7 +75,6 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
         } catch (Exception e) {
             log.warn("Caught Exception while trying to connect to Serf at {}:{} during instantiation", serfHost, serfPort);
             connecting.set(false);
-            tryToReconnect();
         }
     }
 
@@ -81,10 +84,7 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
         this.currentChannel = null;
 
         try {
-            final Channel channel = new Bootstrap().group(eventLoopGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(new SerfClientInitializer(messagePack, requestsBySequence, extractorManager))
-                    .connect(serfHost, serfPort).sync().channel();
+            final Channel channel = bootstrap.connect(serfHost, serfPort).sync().channel();
             connecting.set(false);
             SerfRequest handshake = SerfRequests.handshake(new SerfResponseCallBack<EmptyResponseBody>() {
                 @Override
@@ -121,7 +121,7 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
         eventLoopGroup.shutdownGracefully();
     }
 
-    private void tryToReconnect() {
+    public void tryToReconnect() {
         log.debug("Trying to reconnect to {}:{}", serfHost, serfPort);
         if (!connecting.get()) {
             BackingOffFutureTask reconnectTask = new BackingOffFutureTask(eventLoopGroup, new Callable<Boolean>() {

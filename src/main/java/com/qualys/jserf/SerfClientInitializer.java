@@ -37,6 +37,7 @@ public class SerfClientInitializer extends ChannelInitializer<SocketChannel> {
     private final MessagePack messagePack;
     private final ConcurrentMap<Integer, SerfRequest> requestsBySequence;
     private final ExtractorManager extractorManager;
+    private final ChannelManger channelManger;
 
     @Override
     protected void initChannel(SocketChannel socketChannel) throws Exception {
@@ -45,6 +46,8 @@ public class SerfClientInitializer extends ChannelInitializer<SocketChannel> {
         if (log.isDebugEnabled()) {
             pipeline.addFirst("loggingHandler", new LoggingHandler());
         }
+
+        pipeline.addLast("reconnectHandler", new ReconnectClientHandler(channelManger));
 
         log.debug("Adding ByteArray Encoder");
         pipeline.addLast("bytesEncoder", new ByteArrayEncoder());
