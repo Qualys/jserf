@@ -27,5 +27,5 @@ import org.msgpack.annotation.Message;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StreamRequestBody extends RequestBody {
-    public String type;
+    public String type = "*";
 }
