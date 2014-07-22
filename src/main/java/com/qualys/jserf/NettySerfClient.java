@@ -22,6 +22,7 @@ import com.qualys.jserf.extractor.ExtractorManager;
 import com.qualys.jserf.model.request.Command;
 import com.qualys.jserf.model.request.StopRequestBody;
 import io.netty.channel.Channel;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -36,15 +37,17 @@ import java.io.IOException;
 @Slf4j
 public class NettySerfClient implements SerfClient {
     private final MessagePack messagePack;
-    private final ChannelManger channelManger;
     private final Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequenceCache;
+
+    private final ChannelManger channelManger;
 
     private final ExtractorManager extractorManager = new ExtractorManager();
 
-    public NettySerfClient(String serfHost, int serfPort, MessagePack messagePack, long minReconnectRetrySeconds, long maxReconnectRetrySeconds, Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequenceCache) {
+    public NettySerfClient(String serfHost, int serfPort, MessagePack messagePack, long minReconnectRetrySeconds, long maxReconnectRetrySeconds, Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequenceCache, ConnectionStateChangeCallback connectionStateChangeCallback) {
         this.messagePack = messagePack;
         this.callBacksBySequenceCache = callBacksBySequenceCache;
-        this.channelManger = new ChannelManger(serfHost, serfPort, minReconnectRetrySeconds, maxReconnectRetrySeconds, extractorManager, messagePack, callBacksBySequenceCache);
+
+        this.channelManger = new ChannelManger(serfHost, serfPort, minReconnectRetrySeconds, maxReconnectRetrySeconds, extractorManager, messagePack, callBacksBySequenceCache, connectionStateChangeCallback);
     }
 
     @Override
@@ -98,9 +101,10 @@ public class NettySerfClient implements SerfClient {
         private long minReconnectRetrySeconds = 1l;
         private long maxReconnectRetrySeconds = 30l;
         private Cache<Integer, Pair<Command, SerfResponseCallBack>> callBackCache = CacheBuilder.newBuilder().build();
+        private ConnectionStateChangeCallback connectionStateChangeCallback = null;
 
         public SerfClient build() {
-            return new NettySerfClient(serfHost, serfPort, messagePack, minReconnectRetrySeconds, maxReconnectRetrySeconds, callBackCache);
+            return new NettySerfClient(serfHost, serfPort, messagePack, minReconnectRetrySeconds, maxReconnectRetrySeconds, callBackCache, connectionStateChangeCallback);
         }
     }
 }

@@ -50,6 +50,8 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
     private final ExtractorManager extractorManager;
     private final MessagePack messagePack;
     private final Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequence;
+    private final ConnectionStateChangeCallback connectionStateChangeCallback;
+
     private final EventLoopGroup eventLoopGroup;
     private final Bootstrap bootstrap;
     private final BackoffStrategy backoffStrategy;
@@ -59,12 +61,13 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
 
     private volatile Channel currentChannel;
 
-    public ChannelManger(String host, int port, long minReconnectRetrySeconds, long maxReconnectRetrySeconds, ExtractorManager extractorManager, MessagePack messagePack, Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequence) {
+    public ChannelManger(String host, int port, long minReconnectRetrySeconds, long maxReconnectRetrySeconds, ExtractorManager extractorManager, MessagePack messagePack, Cache<Integer, Pair<Command, SerfResponseCallBack>> callBacksBySequence, ConnectionStateChangeCallback connectionStateChangeCallback) {
         this.serfHost = host;
         this.serfPort = port;
         this.extractorManager = extractorManager;
         this.messagePack = messagePack;
         this.callBacksBySequence = callBacksBySequence;
+        this.connectionStateChangeCallback = connectionStateChangeCallback;
 
         this.eventLoopGroup = new NioEventLoopGroup();
         this.bootstrap = new Bootstrap().group(eventLoopGroup)
@@ -82,6 +85,9 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
 
     private void connect() throws InterruptedException, IOException {
         connected.set(false);
+        if (connectionStateChangeCallback != null) {
+            connectionStateChangeCallback.handleConnectionStateChange(false);
+        }
         connecting.set(true);
         this.currentChannel = null;
 
@@ -95,6 +101,9 @@ public class ChannelManger implements Supplier<Channel>, Closeable {
                     if (!response.isErrored()) {
                         currentChannel = channel;
                         connected.set(true);
+                        if (connectionStateChangeCallback != null) {
+                            connectionStateChangeCallback.handleConnectionStateChange(true);
+                        }
                     }
                 }
             });
