@@ -24,6 +24,6 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor
 @Data
-public abstract class StreamResponseBody extends ResponseBody {
+public class StreamResponseBody extends ResponseBody {
     public String eventName;
 }

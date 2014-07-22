@@ -35,14 +35,19 @@ public class StreamResponseBodyExtractor implements ResponseBodyExtractor<Stream
     @Override
     public StreamResponseBody extractBody(Map<String, Value> bodyValues, ExtractorManager extractorManager) throws Exception {
         log.debug(bodyValues.toString());
-        String eventValue = bodyValues.get("Event").asRawValue().getString();
-        Optional<ResponseBodyExtractor> extractor = extractorManager.getExtractor(eventValue);
-        if (extractor.isPresent()) {
-            StreamResponseBody streamResponseBody = (StreamResponseBody) extractor.get().extractBody(bodyValues, extractorManager);
-            streamResponseBody.setEventName(eventValue);
-            return streamResponseBody;
+        if (!bodyValues.isEmpty()) {
+            String eventValue = bodyValues.get("Event").asRawValue().getString();
+            Optional<ResponseBodyExtractor> extractor = extractorManager.getExtractor(eventValue);
+            if (extractor.isPresent()) {
+                StreamResponseBody streamResponseBody = (StreamResponseBody) extractor.get().extractBody(bodyValues, extractorManager);
+                streamResponseBody.setEventName(eventValue);
+                return streamResponseBody;
+            }
         }
-        return null;
+
+        StreamResponseBody responseBody = new StreamResponseBody();
+        responseBody.eventName = null;
+        return responseBody;
     }
 
     @Override

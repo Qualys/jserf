@@ -32,7 +32,7 @@ import java.util.Map;
 @Data
 @Builder
 @AllArgsConstructor
-public class MembersResponseBody extends ResponseBody {
+public class MembersResponseBody extends StreamResponseBody {
     private List<Member> members = Collections.emptyList();
 
     @NoArgsConstructor

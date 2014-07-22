@@ -19,6 +19,7 @@ package com.qualys.jserf;
 import com.qualys.jserf.model.response.EmptyResponseBody;
 import com.qualys.jserf.model.response.MembersResponseBody;
 import com.qualys.jserf.model.response.StatsResponseBody;
+import com.qualys.jserf.model.response.StreamResponseBody;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
@@ -144,6 +145,42 @@ public class SerfClientIT {
         };
 
         SerfRequest request = SerfRequests.members(callBack);
+
+        client.makeRpc(request);
+        latch.await();
+
+        assertTrue(callbackInvoked[0]);
+    }
+
+    @Test(timeout = 10000)
+    public void testStream() throws Exception {
+        while (!client.isConnected()) {
+            Thread.sleep(500);
+        }
+        final boolean[] callbackInvoked = {false};
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        SerfResponseCallBack<StreamResponseBody> callBack = new SerfResponseCallBack<StreamResponseBody>() {
+            @Override
+            public void call(SerfResponse<StreamResponseBody> response) {
+                log.debug("Received call back with sequence {}", response.getHeader().getSeq());
+                callbackInvoked[0] = true;
+
+                assertNotNull(response.getHeader());
+                assertEquals(StringUtils.EMPTY, response.getHeader().getError());
+                assertEquals(StreamResponseBody.class, response.getBody().getClass());
+                assertNotNull(response.getBody());
+
+                StreamResponseBody body = response.getBody();
+                log.debug("body={}", body);
+                assertNull(body.getEventName()); //the event name is null when subscribing to the stream
+
+                //don't count down unless all the asserts pass
+                latch.countDown();
+            }
+        };
+
+        SerfRequest request = SerfRequests.stream("*", callBack);
 
         client.makeRpc(request);
         latch.await();

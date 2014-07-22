@@ -32,7 +32,7 @@ import static com.qualys.jserf.model.request.Command.*;
  */
 @Slf4j
 public class EmptyResponseBodyExtractor implements ResponseBodyExtractor<EmptyResponseBody> {
-    private final Collection<Command> handledCommands = ImmutableList.of(HANDSHAKE, AUTH, EVENT, FORCE_LEAVE, TAGS, STREAM, MONITOR, STOP, LEAVE, QUERY, RESPOND);
+    private final Collection<Command> handledCommands = ImmutableList.of(HANDSHAKE, AUTH, EVENT, FORCE_LEAVE, TAGS, MONITOR, STOP, LEAVE, QUERY, RESPOND);
 
     @Override
     public EmptyResponseBody extractBody(Map<String, Value> bodyValues, ExtractorManager extractorManager) throws Exception {
