@@ -35,7 +35,7 @@ public class StreamResponseBodyExtractor implements ResponseBodyExtractor<Stream
     @Override
     public StreamResponseBody extractBody(Map<String, Value> bodyValues, ExtractorManager extractorManager) throws Exception {
         log.debug(bodyValues.toString());
-        if (!bodyValues.isEmpty()) {
+        if (bodyValues.containsKey("Event")) {
             String eventValue = bodyValues.get("Event").asRawValue().getString();
             Optional<ResponseBodyExtractor> extractor = extractorManager.getExtractor(eventValue);
             if (extractor.isPresent()) {
